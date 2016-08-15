@@ -16,17 +16,16 @@ object SearchMain {
 
     val rdd = sc.textFile("E:\\test_search_data", 4)
     val information = rdd.map(x => x.split("\t")).map(x => (x(0), x(2).replace("【京东超市】", ""), x(3)))
-      .flatMap(x => segmenter(x._2).map(y => (y, x._1))).groupByKey()//.reduce((x,y) => x ++ y)
     information.foreach(println)
 
-    println("-----------------------------")
-    val ta = "狮王牙膏"
-    val taList = segmenter(ta)
-    taList.foreach(println)
+    val index = information.flatMap(x => segmenter(x._2).map(y => (y, x._1))).groupByKey().map(x => x._1 + "\t" +x._2.toArray.mkString(";"))
+    index.coalesce(2).saveAsTextFile("E:\\index")
 
-    val idRdd = information.filter{
-      x => isContainString(taList, x._1)
-    }.flatMap(x => x._2.toArray)//.foreach(x => x.foreach(println))
+
+
+//    val idRdd = information.filter{
+//      x => isContainString(taList, x._1)
+//    }.flatMap(x => x._2.toArray)//.foreach(x => x.foreach(println))
       //.foreach(println)
     //segmenter("你好 word 我不好").foreach(println)
     sc.stop()
@@ -36,13 +35,5 @@ object SearchMain {
   def segmenter(s:String): Array[String] = {
     val x = WordSegmenter.seg(s).toArray.map(x => x.toString)
     x
-  }
-
-  def isContainString(taList:Array[String], string: String): Boolean ={
-    for (word <- taList) {
-      if (string.equals(word))
-        return true
-    }
-    false
   }
 }
